@@ -4,6 +4,7 @@ const themeSelect = document.getElementById('theme-select');
 const timeoutInput = document.getElementById('timeout-input');
 const stealthCheckbox = document.getElementById('stealth-checkbox');
 const autostartCheckbox = document.getElementById('autostart-checkbox');
+const workspaceInput = document.getElementById('workspace-input');
 const btnSave = document.getElementById('btn-save');
 const btnCancel = document.getElementById('btn-cancel');
 
@@ -15,6 +16,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     timeoutInput.value = Math.round((config.timeout || 300000) / 1000);
     stealthCheckbox.checked = !!config.stealth;
     autostartCheckbox.checked = !!config.autoStart;
+    workspaceInput.value = config.workspacePath || '';
   } catch (err) {
     console.error('Failed to load config', err);
   }
@@ -31,7 +33,8 @@ btnSave.addEventListener('click', () => {
     theme: themeSelect.value,
     timeout: timeoutVal * 1000,
     stealth: stealthCheckbox.checked,
-    autoStart: autostartCheckbox.checked
+    autoStart: autostartCheckbox.checked,
+    workspacePath: workspaceInput.value.trim()
   };
 
   ipcRenderer.send('save-config', updatedConfig);

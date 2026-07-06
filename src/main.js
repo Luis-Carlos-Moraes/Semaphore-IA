@@ -12,6 +12,9 @@ let settingsWindow = null;
 let tray = null;
 let timeoutTimer = null;
 let ipcServer = null;
+let fileWatcher = null;
+let currentWatchedWorkspace = '';
+const activePromptSockets = {};
 
 const ASSETS_DIR = path.join(__dirname, '../assets');
 const TRAY_ICON_PATH = path.join(ASSETS_DIR, 'tray.png');
@@ -192,6 +195,48 @@ function startIpcServer() {
     let buffer = '';
     socket.on('data', (chunk) => {
       buffer += chunk.toString();
+      try {
+        const payload = JSON.parse(buffer.trim());
+        if (payload.cmd === 'prompt') {
+          if (payload.workspace) {
+            updateWorkspaceWatcher(payload.workspace);
+            const config = configManager.loadConfig();
+            if (config.workspacePath !== payload.workspace) {
+              config.workspacePath = payload.workspace;
+              configManager.saveConfig(config);
+            }
+          }
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            // Expand window size to fit the prompt
+            mainWindow.setSize(220, 116);
+            
+            mainWindow.webContents.send('show-prompt', {
+              session: payload.session,
+              question: payload.question,
+              options: payload.options.split(',')
+            });
+            activePromptSockets[payload.session] = socket;
+            stateManager.setSessionState(payload.session, 'red');
+          } else {
+            socket.write(JSON.stringify({ error: 'Window not available' }));
+            socket.end();
+          }
+        } else if (payload.cmd === 'set') {
+          if (payload.workspace) {
+            updateWorkspaceWatcher(payload.workspace);
+            const config = configManager.loadConfig();
+            if (config.workspacePath !== payload.workspace) {
+              config.workspacePath = payload.workspace;
+              configManager.saveConfig(config);
+            }
+          }
+          stateManager.setSessionState(payload.session, payload.state);
+          socket.end();
+        }
+        buffer = '';
+      } catch (err) {
+        // Wait for complete JSON payload
+      }
     });
 
     socket.on('end', () => {
@@ -203,7 +248,7 @@ function startIpcServer() {
           }
         }
       } catch (err) {
-        console.error('Failed to parse IPC message:', err, buffer);
+        // Ignored if already parsed on data
       }
     });
 
@@ -263,6 +308,7 @@ ipcMain.handle('get-config', () => {
 
 ipcMain.on('save-config', (event, updatedConfig) => {
   configManager.saveConfig(updatedConfig);
+  updateWorkspaceWatcher(updatedConfig.workspacePath);
 
   // Apply visual changes immediately
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -295,6 +341,85 @@ ipcMain.on('close-widget', () => {
   if (mainWindow) mainWindow.hide();
 });
 
+ipcMain.on('submit-prompt-response', (event, { session, option }) => {
+  const socket = activePromptSockets[session];
+  if (socket && !socket.destroyed) {
+    socket.write(JSON.stringify({ result: option }));
+    socket.end();
+    delete activePromptSockets[session];
+  }
+  stateManager.setSessionState(session, 'green');
+
+  // Shrink window back to user's preferred layout dimensions
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const config = configManager.loadConfig();
+    const dim = getWidgetDimensions(config.theme);
+    mainWindow.setSize(dim.w, dim.h);
+  }
+});
+
+function updateWorkspaceWatcher(workspacePath) {
+  if (!workspacePath) return;
+  const targetPath = path.resolve(workspacePath);
+  if (currentWatchedWorkspace === targetPath) return;
+
+  // Close existing watcher
+  if (fileWatcher) {
+    fileWatcher.close();
+    fileWatcher = null;
+  }
+
+  const stateFilePath = path.join(targetPath, '.agents/state.json');
+  const dirPath = path.dirname(stateFilePath);
+
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+  } catch (err) {
+    console.error('Failed to create state directory:', err);
+  }
+
+  const updateStateFromFile = () => {
+    try {
+      if (fs.existsSync(stateFilePath)) {
+        const fileContent = fs.readFileSync(stateFilePath, 'utf8');
+        const data = JSON.parse(fileContent);
+        if (data && data.state) {
+          stateManager.setSessionState(data.session || 'default', data.state);
+        }
+      }
+    } catch (err) {
+      // Ignore reading/parsing errors during writes
+    }
+  };
+
+  updateStateFromFile();
+
+  try {
+    fileWatcher = fs.watch(dirPath, (eventType, filename) => {
+      if (filename === 'state.json') {
+        updateStateFromFile();
+      }
+    });
+    currentWatchedWorkspace = targetPath;
+    console.log(`Watching workspace state at: ${stateFilePath}`);
+  } catch (err) {
+    console.error('Failed to start file watcher for workspace:', err);
+  }
+}
+
+function startStateFileWatcher() {
+  const config = configManager.loadConfig();
+  if (config.workspacePath) {
+    updateWorkspaceWatcher(config.workspacePath);
+  } else {
+    // Fallback to relative workspace root (development)
+    const fallbackPath = path.join(__dirname, '../');
+    updateWorkspaceWatcher(fallbackPath);
+  }
+}
+
 // App Startup Lifecycle
 app.whenReady().then(() => {
   ensureAssetsExist();
@@ -302,6 +427,7 @@ app.whenReady().then(() => {
   createTray();
   startIpcServer();
   startTimeoutTimer();
+  startStateFileWatcher();
 
   // Hide Dock icon on macOS
   if (process.platform === 'darwin') {
@@ -324,6 +450,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   // Clean up IPC server
+  if (fileWatcher) fileWatcher.close();
   if (ipcServer) ipcServer.close();
   if (timeoutTimer) clearInterval(timeoutTimer);
 
