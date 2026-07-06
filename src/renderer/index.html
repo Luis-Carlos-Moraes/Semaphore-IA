@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semaphore JS</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div id="semaphore" class="vertical">
+    <div class="light-container">
+      <div class="light red" id="light-red"></div>
+      <div class="light yellow" id="light-yellow"></div>
+      <div class="light green active" id="light-green"></div>
+    </div>
+    
+    <!-- Floating control bar, excluded from window drag -->
+    <div id="controls" class="no-drag">
+      <button id="btn-settings" title="Configurações">⚙️</button>
+      <button id="btn-close" title="Fechar">✕</button>
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>
