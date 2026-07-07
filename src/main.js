@@ -62,7 +62,7 @@ function createMainWindow() {
     resizable: false,
     maximizable: false,
     fullscreenable: false,
-    skipTaskbar: true,
+    skipTaskbar: false,
     hasShadow: false,
     icon: APP_ICON_PATH,
     webPreferences: {
@@ -73,6 +73,11 @@ function createMainWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'renderer/index.html'));
 
+  // Redirect renderer console logs to terminal for debugging
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    console.log(`[Renderer Console] ${message} (at ${path.basename(sourceId)}:${line})`);
+  });
+
   // Apply stealth mode configuration
   mainWindow.setContentProtection(config.stealth);
 
@@ -80,6 +85,17 @@ function createMainWindow() {
     mainWindow = null;
   });
 }
+
+function bringToFront() {
+  if (mainWindow) {
+    if (!mainWindow.isVisible()) {
+      mainWindow.show();
+    }
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    mainWindow.focus();
+  }
+}
+
 
 function createSettingsWindow() {
   if (settingsWindow) {
@@ -123,7 +139,7 @@ function createTray() {
       label: 'Mostrar Widget',
       click: () => {
         if (mainWindow) {
-          mainWindow.show();
+          bringToFront();
         } else {
           createMainWindow();
         }
@@ -163,11 +179,7 @@ function createTray() {
   // Show window on double click
   tray.on('double-click', () => {
     if (mainWindow) {
-      if (mainWindow.isVisible()) {
-        mainWindow.hide();
-      } else {
-        mainWindow.show();
-      }
+      bringToFront();
     } else {
       createMainWindow();
     }
@@ -312,6 +324,20 @@ ipcMain.on('save-config', (event, updatedConfig) => {
   // Close configurations window
   if (settingsWindow) {
     settingsWindow.close();
+  }
+});
+
+ipcMain.on('update-icon', (event, dataUrl) => {
+  try {
+    const iconImage = nativeImage.createFromDataURL(dataUrl);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setIcon(iconImage);
+    }
+    if (tray && !tray.isDestroyed()) {
+      tray.setImage(iconImage);
+    }
+  } catch (err) {
+    console.error('Falha ao atualizar ícones dinâmicos:', err);
   }
 });
 

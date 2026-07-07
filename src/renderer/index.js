@@ -41,6 +41,7 @@ function updateTheme(theme) {
 // IPC Listeners
 ipcRenderer.on('state-changed', (event, state) => {
   updateLights(state);
+  updateDynamicIcon(state);
 });
 
 ipcRenderer.on('theme-changed', (event, theme) => {
@@ -102,3 +103,41 @@ btnClose.addEventListener('click', () => {
 window.addEventListener('DOMContentLoaded', () => {
   ipcRenderer.send('get-initial-state');
 });
+
+function updateDynamicIcon(state) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext('2d');
+
+  // Desenha o fundo escuro do semáforo
+  ctx.fillStyle = '#1e1e1e';
+  ctx.beginPath();
+  ctx.arc(16, 16, 14, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Cor do LED ativo
+  let color = '#00e676'; // Verde
+  if (state === 'red') {
+    color = '#ff1744';
+  } else if (state === 'yellow') {
+    color = '#ffd600';
+  }
+
+  // Brilho externo (glow)
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 6;
+
+  // Desenha o LED ativo
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(16, 16, 8, 0, 2 * Math.PI);
+  ctx.fill();
+
+  // Envia a imagem gerada ao processo principal
+  const dataUrl = canvas.toDataURL('image/png');
+  ipcRenderer.send('update-icon', dataUrl);
+}

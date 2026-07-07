@@ -1,6 +1,6 @@
 {
   "agent": {
-    "name": "Antigravity",
+    "name": "*",
     "hooks": {
       "beforeSubmitPrompt": "node C:\\Users\\MoraesKafury\\Documents\\Curso\\Semaphore-IA\\src\\cli\\index.js yellow",
       "beforeToolUse": "node C:\\Users\\MoraesKafury\\Documents\\Curso\\Semaphore-IA\\src\\cli\\index.js red",
