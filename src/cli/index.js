@@ -1,5 +1,22 @@
 const net = require('net');
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
+
+function logError(err) {
+  try {
+    const logFilePath = path.join(__dirname, '../../cli-errors.log');
+    const logMessage = `[${new Date().toISOString()}] Error: ${err.message}\n` +
+                       `Stack: ${err.stack}\n` +
+                       `CWD: ${process.cwd()}\n` +
+                       `PATH: ${process.env.PATH}\n` +
+                       `ARGS: ${process.argv.join(' ')}\n\n`;
+    fs.appendFileSync(logFilePath, logMessage, 'utf8');
+  } catch (e) {
+    // Ignore log errors
+  }
+}
+
 
 // Parse arguments
 const args = process.argv.slice(2);
@@ -25,7 +42,7 @@ if (command === 'prompt') {
   const session = args[3] || 'default';
 
   const client = net.createConnection(ipcPath, () => {
-    const payload = JSON.stringify({ cmd: 'prompt', question, options, session, workspace: process.cwd() });
+    const payload = JSON.stringify({ cmd: 'prompt', question, options, session });
     client.write(payload);
   });
 
@@ -42,6 +59,7 @@ if (command === 'prompt') {
   });
 
   client.on('error', (err) => {
+    logError(err);
     console.error('Error: Semaphore app is not running.');
     process.exit(1);
   });
@@ -64,12 +82,13 @@ if (command === 'prompt') {
   }
 
   const client = net.createConnection(ipcPath, () => {
-    const payload = JSON.stringify({ cmd: 'set', state, session, workspace: process.cwd() });
+    const payload = JSON.stringify({ cmd: 'set', state, session });
     client.write(payload);
     client.end();
   });
 
   client.on('error', (err) => {
+    logError(err);
     // Silent fallback if server is not running
     process.exit(0);
   });

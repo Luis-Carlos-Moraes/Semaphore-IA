@@ -198,14 +198,7 @@ function startIpcServer() {
       try {
         const payload = JSON.parse(buffer.trim());
         if (payload.cmd === 'prompt') {
-          if (payload.workspace) {
-            updateWorkspaceWatcher(payload.workspace);
-            const config = configManager.loadConfig();
-            if (config.workspacePath !== payload.workspace) {
-              config.workspacePath = payload.workspace;
-              configManager.saveConfig(config);
-            }
-          }
+          console.log(`[IPC Server] Recebido: PROMPT | Sessão: ${payload.session || 'default'} | Pergunta: "${payload.question}"`);
           if (mainWindow && !mainWindow.isDestroyed()) {
             // Expand window size to fit the prompt
             mainWindow.setSize(220, 116);
@@ -222,14 +215,7 @@ function startIpcServer() {
             socket.end();
           }
         } else if (payload.cmd === 'set') {
-          if (payload.workspace) {
-            updateWorkspaceWatcher(payload.workspace);
-            const config = configManager.loadConfig();
-            if (config.workspacePath !== payload.workspace) {
-              config.workspacePath = payload.workspace;
-              configManager.saveConfig(config);
-            }
-          }
+          console.log(`[IPC Server] Recebido: SET | Sessão: ${payload.session || 'default'} | Estado: ${payload.state}`);
           stateManager.setSessionState(payload.session, payload.state);
           socket.end();
         }
