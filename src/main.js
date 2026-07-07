@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, screen, nativeImage } = require('electron');
+app.disableHardwareAcceleration();
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
@@ -412,7 +413,7 @@ function updateWorkspaceWatcher(workspacePath) {
         const fileContent = fs.readFileSync(stateFilePath, 'utf8');
         const data = JSON.parse(fileContent);
         if (data && data.state) {
-          stateManager.setSessionState(data.session || 'default', data.state);
+          stateManager.setSessionState(data.session || targetPath, data.state);
         }
       }
     } catch (err) {

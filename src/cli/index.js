@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const net = require('net');
 const os = require('os');
 const fs = require('fs');
@@ -50,7 +51,7 @@ if (command === 'prompt') {
   }
   const question = args[1];
   const options = args[2];
-  const session = args[3] || 'default';
+  const session = args[3] || process.cwd();
 
   const client = net.createConnection(ipcPath, () => {
     const payload = JSON.stringify({ cmd: 'prompt', question, options, session });
@@ -81,7 +82,7 @@ if (command === 'prompt') {
 } else {
   // Set state
   const state = command;
-  let session = 'default';
+  let session = process.cwd();
 
   // Handle second arg or --session option
   if (args.length > 1) {

@@ -1,11 +1,11 @@
 {
   "agent": {
-    "name": "*",
+    "name": "Antigravity",
     "hooks": {
-      "beforeSubmitPrompt": "node C:\\Users\\MoraesKafury\\Documents\\Curso\\Semaphore-IA\\src\\cli\\index.js yellow",
-      "beforeToolUse": "node C:\\Users\\MoraesKafury\\Documents\\Curso\\Semaphore-IA\\src\\cli\\index.js red",
-      "afterToolUse": "node C:\\Users\\MoraesKafury\\Documents\\Curso\\Semaphore-IA\\src\\cli\\index.js yellow",
-      "stop": "node C:\\Users\\MoraesKafury\\Documents\\Curso\\Semaphore-IA\\src\\cli\\index.js green"
+      "beforeSubmitPrompt": "semaphore-cli yellow",
+      "beforeToolUse": "semaphore-cli red",
+      "afterToolUse": "semaphore-cli yellow",
+      "stop": "semaphore-cli green"
     }
   }
 }
