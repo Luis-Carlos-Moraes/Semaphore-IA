@@ -1,13 +1,19 @@
 {
   "name": "semaphore",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Semaphore JS - Semáforo para Agentes de IA",
   "main": "src/main.js",
+  "bin": {
+    "semaphore-cli": "./src/cli/index.js"
+  },
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "test": "jest"
+    "test": "jest",
+    "release-major": "standard-version --release-as major",
+    "release-minor": "standard-version --release-as minor",
+    "release-patch": "standard-version --release-as patch"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +21,8 @@
   "devDependencies": {
     "electron": "^43.0.0",
     "electron-builder": "^26.15.3",
-    "jest": "^30.4.2"
+    "jest": "^30.4.2",
+    "standard-version": "^9.5.0"
   },
   "build": {
     "appId": "com.semaphore.js",
