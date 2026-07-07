@@ -4,6 +4,7 @@ const semaphoreEl = document.getElementById('semaphore');
 const redLight = document.getElementById('light-red');
 const yellowLight = document.getElementById('light-yellow');
 const greenLight = document.getElementById('light-green');
+const btnRotate = document.getElementById('btn-rotate');
 const btnSettings = document.getElementById('btn-settings');
 const btnClose = document.getElementById('btn-close');
 
@@ -27,6 +28,7 @@ let isPromptActive = false;
 // Function to update orientation/theme
 function updateTheme(theme) {
   if (isPromptActive) return; // Prevent layout updates during prompt
+  semaphoreEl.classList.remove('prompt-active');
   if (theme === 'horizontal') {
     semaphoreEl.classList.remove('vertical');
     semaphoreEl.classList.add('horizontal');
@@ -47,6 +49,7 @@ ipcRenderer.on('theme-changed', (event, theme) => {
 
 ipcRenderer.on('show-prompt', (event, { session, question, options }) => {
   isPromptActive = true;
+  semaphoreEl.classList.add('prompt-active');
   
   // Set to vertical temporarily to look nice with prompt panel on the right
   semaphoreEl.classList.remove('horizontal');
@@ -74,6 +77,7 @@ ipcRenderer.on('show-prompt', (event, { session, question, options }) => {
 
 ipcRenderer.on('hide-prompt', () => {
   isPromptActive = false;
+  semaphoreEl.classList.remove('prompt-active');
   const promptPanel = document.getElementById('prompt-panel');
   promptPanel.classList.add('hidden');
   
@@ -82,6 +86,10 @@ ipcRenderer.on('hide-prompt', () => {
 });
 
 // Button Controls
+btnRotate.addEventListener('click', () => {
+  ipcRenderer.send('toggle-theme');
+});
+
 btnSettings.addEventListener('click', () => {
   ipcRenderer.send('open-settings');
 });

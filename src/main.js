@@ -38,7 +38,7 @@ function ensureAssetsExist() {
 
 // Get dimensions based on theme configuration
 function getWidgetDimensions(theme) {
-  return theme === 'horizontal' ? { w: 116, h: 46 } : { w: 46, h: 116 };
+  return { w: 116, h: 116 };
 }
 
 function createMainWindow() {
@@ -341,6 +341,19 @@ ipcMain.on('close-widget', () => {
   if (mainWindow) mainWindow.hide();
 });
 
+ipcMain.on('toggle-theme', () => {
+  const config = configManager.loadConfig();
+  const newTheme = config.theme === 'horizontal' ? 'vertical' : 'horizontal';
+  config.theme = newTheme;
+  configManager.saveConfig(config);
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const dim = getWidgetDimensions(newTheme);
+    mainWindow.setSize(dim.w, dim.h);
+    mainWindow.webContents.send('theme-changed', newTheme);
+  }
+});
+
 ipcMain.on('submit-prompt-response', (event, { session, option }) => {
   const socket = activePromptSockets[session];
   if (socket && !socket.destroyed) {
@@ -352,6 +365,7 @@ ipcMain.on('submit-prompt-response', (event, { session, option }) => {
 
   // Shrink window back to user's preferred layout dimensions
   if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('hide-prompt');
     const config = configManager.loadConfig();
     const dim = getWidgetDimensions(config.theme);
     mainWindow.setSize(dim.w, dim.h);

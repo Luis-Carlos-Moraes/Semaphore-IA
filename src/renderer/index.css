@@ -14,6 +14,9 @@ body {
   user-select: none;
   width: 100vw;
   height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Semaphore container with webkit dragging */
@@ -21,8 +24,6 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
-  height: 100%;
   background: rgba(18, 18, 18, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(16px) saturate(180%);
@@ -38,12 +39,32 @@ body {
   flex-direction: column;
   border-radius: 20px;
   padding: 12px 10px;
+  width: 46px;
+  height: 116px;
 }
 
 #semaphore.horizontal {
   flex-direction: row;
   border-radius: 20px;
   padding: 10px 12px;
+  width: 116px;
+  height: 46px;
+}
+
+#semaphore.prompt-active {
+  width: 220px !important;
+  height: 116px !important;
+}
+
+#semaphore.prompt-active .light-container {
+  position: absolute;
+  left: 13px;
+  top: 12px;
+}
+
+#semaphore.prompt-active #controls {
+  left: 23px !important;
+  transform: translateX(-50%) !important;
 }
 
 .light-container {
@@ -106,29 +127,38 @@ body {
 #controls {
   position: absolute;
   display: flex;
-  background: rgba(0, 0, 0, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 4px;
+  background: rgba(18, 18, 18, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 2px;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease-in-out;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
   z-index: 10;
+  gap: 2px;
 }
 
 #semaphore.vertical #controls {
-  top: 50%;
-  left: 105%;
-  transform: translateY(-50%);
-  flex-direction: column;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row;
+  width: 40px;
+  height: 18px;
+  justify-content: center;
+  align-items: center;
 }
 
 #semaphore.horizontal #controls {
-  left: 50%;
-  top: 105%;
-  transform: translateX(-50%);
-  flex-direction: row;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+  width: 18px;
+  height: 40px;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Show controls on hover */
@@ -141,20 +171,20 @@ body {
 #controls button {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-  width: 24px;
-  height: 24px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 8px;
+  width: 10px;
+  height: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 3px;
   transition: all 0.2s ease;
 }
 
 #controls button:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 
