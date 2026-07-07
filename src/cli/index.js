@@ -17,9 +17,20 @@ function logError(err) {
   }
 }
 
+function logInvocation() {
+  try {
+    const logFilePath = path.join(__dirname, '../../cli-calls.log');
+    const logMessage = `[${new Date().toISOString()}] Invocado com ARGS: ${process.argv.slice(2).join(' ')} | CWD: ${process.cwd()}\n`;
+    fs.appendFileSync(logFilePath, logMessage, 'utf8');
+  } catch (e) {
+    // Ignore
+  }
+}
+
 
 // Parse arguments
 const args = process.argv.slice(2);
+logInvocation();
 if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
   console.log('Usage:');
   console.log('  Set State: node index.js <green|yellow|red> [session_id]');
