@@ -60,19 +60,37 @@ class StateManager {
    */
   getGlobalState() {
     const activeSessions = Object.values(this.sessions);
-    if (activeSessions.length === 0) {
-      return 'green';
+    if (activeSessions.length === 0) return 'green';
+
+    const states = activeSessions.map(s => s.state);
+    
+    let desiredState = 'green';
+    if (states.includes('red')) {
+      desiredState = 'red';
+    } else if (states.includes('yellow')) {
+      desiredState = 'yellow';
     }
 
-    // Check priorities: red > yellow > green
-    const states = activeSessions.map(s => s.state);
-    if (states.includes('red')) {
-      return 'red';
+    // Anti-flicker / Minimum display time logic for buffered logs
+    const now = Date.now();
+    if (this.lastGlobalState && this.lastGlobalState !== 'green' && desiredState === 'green') {
+      const timeSinceLastChange = now - this.lastStateChangeTime;
+      // If we are trying to go to Green, but the last state was Yellow/Red less than 1.5s ago
+      if (timeSinceLastChange < 1500) {
+        // Keep the previous state briefly
+        if (!this.flickerTimeout) {
+          this.flickerTimeout = setTimeout(() => {
+            this.flickerTimeout = null;
+            this.triggerChange(); // Re-evaluate after the delay
+          }, 1500 - timeSinceLastChange);
+        }
+        return this.lastGlobalState;
+      }
     }
-    if (states.includes('yellow')) {
-      return 'yellow';
-    }
-    return 'green';
+
+    this.lastGlobalState = desiredState;
+    this.lastStateChangeTime = now;
+    return desiredState;
   }
 
   /**

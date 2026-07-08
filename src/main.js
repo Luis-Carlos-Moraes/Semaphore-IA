@@ -7,6 +7,7 @@ const os = require('os');
 
 const configManager = require('./config');
 const stateManager = require('./state');
+const IdeWatcher = require('./ide-watcher');
 
 let mainWindow = null;
 let settingsWindow = null;
@@ -14,6 +15,7 @@ let tray = null;
 let timeoutTimer = null;
 let ipcServer = null;
 let fileWatcher = null;
+let ideWatcherInstance = null;
 let currentWatchedWorkspace = '';
 const activePromptSockets = {};
 
@@ -456,6 +458,9 @@ app.whenReady().then(() => {
   startTimeoutTimer();
   startStateFileWatcher();
 
+  ideWatcherInstance = new IdeWatcher(stateManager);
+  ideWatcherInstance.start();
+
   // Hide Dock icon on macOS
   if (process.platform === 'darwin') {
     app.dock.hide();
@@ -480,6 +485,7 @@ app.on('before-quit', () => {
   if (fileWatcher) fileWatcher.close();
   if (ipcServer) ipcServer.close();
   if (timeoutTimer) clearInterval(timeoutTimer);
+  if (ideWatcherInstance) ideWatcherInstance.stop();
 
   const ipcPath = os.platform() === 'win32'
     ? '\\\\.\\pipe\\semaphore-js'

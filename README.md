@@ -12,16 +12,17 @@ O **Semaphore JS** é um aplicativo leve, rápido e compatível com **Windows, m
 
 ### 🏗️ Arquitetura Geral
 
-```
-[ IDE Antigravity / Agente de IA ]
-             │
-             ▼ (Dispara hook de ciclo de vida)
-[ CLI Client (Node.js) ] 
-             │
-             ▼ (Escreve JSON via Pipe Nomeado / Socket Unix)
+```text
+[ IDEs com Hooks (Cursor, Cline) ]    [ IDE Antigravity (Sincronia Passiva) ]
+             │                                     │
+             ▼ (Dispara hook via terminal)         ▼ (Lê o transcript.jsonl localmente)
+[ CLI Client (Node.js) ]                [ IdeWatcher Integrado (Polling) ]
+             │                                     │
+             └──────────────────┬──────────────────┘
+                                ▼ 
 [ IPC Server (Módulo Node 'net' embutido no Electron) ]
-             │
-             ▼ (Atualiza o estado global)
+                                │
+                                ▼ (Atualiza o estado global)
 [ Widget Principal (Electron Frameless & Transparent) ] ──> Atualiza o HTML/CSS do Semáforo
 ```
 
@@ -73,23 +74,18 @@ O **Semaphore JS** é um aplicativo leve, rápido e compatível com **Windows, m
 
 ### 🔌 Integração Prática: IDE Antigravity
 
-Você pode configurar a IDE Antigravity ou outros agentes de IA locais para enviar atualizações de estado ao Semaphore JS adicionando chamadas de CLI nos ganchos de ciclo de execução.
+O Semaphore-IA já possui um **Observador Nativo (IdeWatcher)** embutido que se conecta automaticamente à IDE Antigravity. Você **não precisa** configurar nenhum "hook" manual em `.agents/config.json`.
 
-Abaixo está um exemplo de configuração no arquivo do workspace (`.agents/config.json`):
+Basta abrir o aplicativo do Semáforo, e ele começará a ler os arquivos internos da IDE (`transcript.jsonl`) em segundo plano para capturar as ações do agente.
 
-```json
-{
-  "agent": {
-    "name": "Antigravity",
-    "hooks": {
-      "beforeSubmitPrompt": "node C:\\caminho\\para\\semaphore\\src\\cli\\index.js yellow",
-      "beforeToolUse": "node C:\\caminho\\para\\semaphore\\src\\cli\\index.js red",
-      "afterToolUse": "node C:\\caminho\\para\\semaphore\\src\\cli\\index.js yellow",
-      "stop": "node C:\\caminho\\para\\semaphore\\src\\cli\\index.js green"
-    }
-  }
-}
-```
+> [!WARNING]
+> **Aviso Importante: Efeito "Replay" (Log Buffering da IDE)**
+> A IDE Antigravity não emite eventos em tempo real. Ela armazena as ações do agente na memória RAM e só descarrega tudo no arquivo de log do disco rígido quando o agente **termina de formular a resposta inteira**. 
+> 
+> Por causa disso, o Semáforo funciona como um **Feedback Visual de Conclusão**. Quando o agente termina de pensar, o Semáforo recebe a carga inteira de logs de uma vez e pisca na tela (Amarelo -> Vermelho -> Verde) confirmando que a ação foi efetuada e o agente está livre novamente.
+> **Isso não é um bug do Semáforo**, e sim o limite técnico imposto pela arquitetura fechada da IDE Antigravity atual.
+
+Para outras IDEs (como Cursor, Cline, etc) que possuam suporte a ganchos locais reais via terminal, você pode continuar usando os comandos CLI abaixo:
 
 #### Sintaxe de Comandos da CLI
 ```bash
@@ -127,17 +123,18 @@ Para gerar instaladores finais prontos para produção em cada plataforma:
 
 ### 🏗️ General Architecture
 
-```
-[ Antigravity IDE / AI Agent ]
-             │
-             ▼ (Triggers lifecycle hook)
-[ CLI Client (Node.js) ] 
-             │
-             ▼ (Writes JSON via Named Pipe / Unix Socket)
-[ IPC Server (Built-in Node 'net' module in Electron) ]
-             │
-             ▼ (Updates global state)
-[ Main Widget (Electron Frameless & Transparent) ] ──> Updates Semaphore HTML/CSS
+```text
+[ IDEs with Hooks (Cursor, Cline) ]   [ Antigravity IDE (Passive Sync) ]
+             │                                     │
+             ▼ (Fires shell hook)                  ▼ (Reads local transcript.jsonl)
+[ CLI Client (Node.js) ]                [ Built-in IdeWatcher (Polling) ]
+             │                                     │
+             └──────────────────┬──────────────────┘
+                                ▼ 
+[ IPC Server (Embedded Node 'net' module in Electron) ]
+                                │
+                                ▼ (Updates global state)
+[ Main Widget (Electron Frameless & Transparent) ] ──> Updates HTML/CSS Traffic Light
 ```
 
 ---
@@ -188,23 +185,18 @@ Para gerar instaladores finais prontos para produção em cada plataforma:
 
 ### 🔌 Practical Integration: Antigravity IDE
 
-You can configure the Antigravity IDE or other local AI agents to send state updates to Semaphore JS by adding CLI calls to execution lifecycle hooks.
+Semaphore JS includes a built-in **Native Observer (IdeWatcher)** that connects automatically to the Antigravity IDE. You **do not** need to configure any manual "hooks" in `.agents/config.json`.
 
-Below is an example configuration in the workspace file (`.agents/config.json`):
+Simply open the Semaphore app, and it will begin reading the IDE's internal log files (`transcript.jsonl`) in the background to capture the agent's actions.
 
-```json
-{
-  "agent": {
-    "name": "Antigravity",
-    "hooks": {
-      "beforeSubmitPrompt": "node C:\\path\\to\\semaphore\\src\\cli\\index.js yellow",
-      "beforeToolUse": "node C:\\path\\to\\semaphore\\src\\cli\\index.js red",
-      "afterToolUse": "node C:\\path\\to\\semaphore\\src\\cli\\index.js yellow",
-      "stop": "node C:\\path\\to\\semaphore\\src\\cli\\index.js green"
-    }
-  }
-}
-```
+> [!WARNING]
+> **Important Notice: "Replay" Effect (IDE Log Buffering)**
+> The Antigravity IDE does not emit events in real time. It stores the agent's actions in RAM and only flushes everything to the hard drive log file when the agent **finishes formulating the entire response**.
+> 
+> Because of this, the Semaphore functions as a **Visual Completion Feedback**. When the agent finishes thinking, Semaphore receives the entire load of logs at once and blinks on the screen (Yellow -> Red -> Green), confirming that the action was performed and the agent is idle again.
+> **This is not a Semaphore bug**, but rather a technical limit imposed by the current closed architecture of the Antigravity IDE.
+
+For other IDEs (like Cursor, Cline, etc.) that support real local terminal hooks, you can continue using the CLI commands below:
 
 #### CLI Command Syntax
 ```bash
